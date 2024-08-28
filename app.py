@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-# SQLite 데 이터베이스 초기화
+# SQLite 데 이터베이스 초기 화
 def init_db():
     conn = sqlite3.connect('example.db')
     c = conn.cursor()
