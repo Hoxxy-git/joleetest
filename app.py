@@ -1,10 +1,11 @@
 from flask import Flask, request, redirect, url_for, render_template_string
+from markupsafe import escape  # markupsafe에서 escape를 가져옵니다.
 import sqlite3
 import os
 
 app = Flask(__name__)
 
-# SQLite 데 이터베이스 초기 화
+# SQLite 데이터베이스 초기화
 def init_db():
     conn = sqlite3.connect('example.db')
     c = conn.cursor()
@@ -23,18 +24,18 @@ def home():
         <button onclick="window.location.href='/greet'">Greet Page</button>
     '''
 
-# SQL Injection 취약점이 있는 로그인 페이지
+# SQL Injection 방지된 로그인 페이지
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = escape(request.form['username'])
+        password = escape(request.form['password'])
 
-        # SQL Injection 취약점이 있는 코드
+        # SQL Injection 방지된 코드
         conn = sqlite3.connect('example.db')
         c = conn.cursor()
-        query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
-        c.execute(query)
+        query = "SELECT * FROM users WHERE username = ? AND password = ?"
+        c.execute(query, (username, password))
         user = c.fetchone()
         conn.close()
 
@@ -51,12 +52,12 @@ def login():
         </form>
     '''
 
-# 파일 업로드 취약점이 있는 페이지 (Path Traversal)
+# 파일 업로드 페이지
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
         file = request.files['file']
-        filename = file.filename  # 이 코드에는 Path Traversal 취약점이 존재합니다.
+        filename = os.path.basename(file.filename)
         file.save(os.path.join('uploads', filename))
         return 'File uploaded successfully'
     
@@ -67,12 +68,12 @@ def upload_file():
         </form>
     '''
 
-# XSS 취약점이 있는 페이지
+# XSS 방지된 페이지
 @app.route('/greet')
 def greet():
     name = request.args.get('name', '')
-    return f'<h1>Hello, {name}!</h1>'  # 이 코드에는 XSS 취약점이 존재합니다.
+    return f'<h1>Hello, {escape(name)}!</h1>'
 
 if __name__ == '__main__':
     init_db()  # 데이터베이스 초기화
-    app.run(debug=True)  # 애플리케이션 실행
+    app.run(debug=False)  # 애플리케이션 실행
