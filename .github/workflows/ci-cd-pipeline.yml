@@ -83,6 +83,30 @@ jobs:
         run: |
           eb init -p python-3.11 joleeus-env --region ap-northeast-2
 
+      - name: Check if environment exists
+        id: check_env
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "ap-northeast-2"
+        run: |
+          if eb list | grep -q joleeus-env; then
+            echo "Environment exists."
+            echo "exists=true" >> $GITHUB_ENV
+          else
+            echo "Environment does not exist."
+            echo "exists=false" >> $GITHUB_ENV
+          fi
+
+      - name: Create Elastic Beanstalk environment
+        if: env.exists == 'false'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "ap-northeast-2"
+        run: |
+          eb create joleeus-env --region ap-northeast-2
+
       - name: Deploy to Elastic Beanstalk
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
